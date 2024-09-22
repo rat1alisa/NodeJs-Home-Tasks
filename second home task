@@ -1,0 +1,216 @@
+//Node js home task (deadline - 30.09.24) - Особенности JavaScript в контексте Node.js Async/await Promises Таймеры в Node.js
+
+
+
+
+console.log('start');
+
+setTimeout(() => {
+    console.log('setTimeout');
+});
+
+Promise.resolve().then(() => {
+    console.log('resolve');
+});
+
+console.log('end');
+
+//1) первой выполнится синхронная функция вывода в консоль - console.log('start');
+//2) следующей выполнится еще одна синхронная функция - console.log('end');
+//остальные функции являются асинхронными, они не всегда выполняются по порядку
+//3) next - Promise.resolve().then(() => {console.log('resolve');}); -
+//асинхроннаяя функция, но она выполнится быстрее, чем setTimeout, так как не содержит таймера
+//4) наконец выполнится setTimeout
+
+// start end resolve setTimeout
+
+
+
+
+
+const timer1 = setTimeout (() => {
+    console.log('timer1');
+
+    const promise1 = Promise.resolve().then(() => {
+        console.log('promise1');
+    });
+}, 0);
+
+const timer2 = setTimeout (() => {
+    console.log('timer2');
+}, 0);
+
+//так как обе функции setTimeout - асинхронные, то они будут выполняться по порядку
+//1)первой выполнится синхронная функция вывода в консоль - console.log('timer1');
+//2) асинхронная функция Promise.resolve().then(), но задержек в ее выполнении не будет, так как она не содержит setTimeout
+//console.log('promise1');
+//3) в порядке очереди вылнится console.log('timer2');
+
+// timer1 promise1 timer2
+
+
+
+
+
+Promise.reject(1)
+    .then(data => {
+        console.log(data);
+    })
+    .then(null, data => console.log(data))
+    .then(() => console.log('ok'));
+
+//1) первый then() скипаем, так как он не может обработать ошибку (может только catch)
+//2) второй then() уже сможет обработать ошибку, выведет в консоль 1
+//3) после обработки ошибки сможет сработать третий then(), выведет ok
+
+//1 ok
+
+
+
+
+
+Promise.reject()
+    
+    .catch(() => {
+        console.log('error1'); 
+        return Promise.reject();
+    })
+
+    .catch(() => {
+        console.log('error2'); 
+    })
+
+//1) первый catch выводит console.log('error1'); 
+//2) так как первый catch вернул Promise.reject(), второй catch также его обоабатывает, выводя console.log('error2'); 
+
+//error1 error2
+
+
+
+
+
+Promise.resolve()
+    .then(() => console.log(1))
+    .then(() => console.log(2))
+
+Promise.resolve()
+    .then(() => console.log(11))
+    .then(() => console.log(22))
+
+// все then() будут выполнятся последовательно по очереди (выполнится первый then() у первого Promise 
+// -> выполнится первый then() у второго Promise)
+
+//1 11 2 22
+
+
+
+
+
+Promise.resolve()
+    .then(() => console.log(1))                          
+    .then(() => { console.log(2); throw new Error(); })  
+    .catch(() => console.log(3))                         
+    .then(() => console.log(4))                          
+
+Promise.resolve()
+    .then(() => console.log(11))                       
+    .then(() => { console.log(12); throw new Error(); }) 
+    .catch(() => console.log(13))                        
+    .then(() => console.log(14))  
+    
+// все then() и catch() будут выполнятся последовательно по очереди (выполнится первый then() у первого Promise 
+// -> выполнится первый then() у второго Promise ... выполнится первый catch() у первого Promise 
+// ->  выполнится первый catch() у второго Promise)
+
+// 1 11 2 12 3 13 4 14
+
+
+
+
+
+setTimeout(function timeout() {
+    console.log('timeout')
+}, 0);
+
+let p = new Promise(function(resolve, reject) {
+    console.log ('creating promise');
+    resolve()
+});
+p.then(function() {
+    console.log('processing promise')
+});
+console.log('end');
+
+//1) первой выполнится синхронная операция создания Promise console.log('end')
+//2) далее выполнится синхронная операция console.log('end')
+//3) после создания Promise выполнится then() (он выполняется только после обработки Promise)
+//4) самой последней выполнится асинхронная функция setTimeout
+
+//creating promise, end, processing promise, timeout
+
+
+
+
+console.log(1);
+setTimeout(() => console.log(2));
+
+Promise.reject(3).catch(console.log);
+new Promise(resolve => setTimeout(resolve)).then(() => console.log(4));
+Promise.resolve(5).then(console.log);
+
+console.log(6);
+setTimeout(() => console.log(7), 0);
+
+
+//1) первой выполнится синхронная операция console.log(1)
+//2) второй выполнится синхронная операция console.log(6)
+//все синхронные операции закончились, далее асинхронные
+//3) выполняем Promise.reject(3).catch(console.log)
+//4) выполняем Promise.resolve(5).then(console.log);
+//  далее переходим к setTimeout - setTimeout(() => console.log(2));
+//потому, что этот тамер был поставлен "первее всех"
+//6) console.log(4) - аналогично
+//7) setTimeout(() => console.log(7), 0);
+
+//1 6 3 5 2 4 7
+
+
+
+
+const p = new Promise((resolve, reject) =>{
+    reject(Error('Все сломалось:('));
+})
+    .catch((error) => console.log('First - ', error.massage))
+    .catch((error) => console.log('Second - ', error.massage))
+
+//выполнится только первый catch(), так как он ничего не возвращает для второго
+
+
+
+
+
+setTimeout(function timeout() {
+    console.log('timeout')
+}, 0);
+
+const p = new Promise(function(resolve, reject) {
+    console.log ('creating promise');
+    resolve()
+});
+const p2 = new Promise(function(resolve, reject) {
+    console.log (123);
+});
+p.then(() => {
+    console.log('promise resolving');
+})
+console.log('end');
+console.log('p2 - ', p2);
+
+//1) первой выполнится синхронная функция создания Promise
+//2) аналогично выполнится вторая синхронная функция создания Promise
+//3) как только выполнился Promise - выполняется p.then()
+//4) выполнится синхронная функция console.log('end')
+//5) синхронная функция console.log('p2 - ', p2)
+//6) последней выполнится асинхронная функция setTimeout
+
+//creating promise, 123, promise resolving, end, p2 - Promise, timeout
